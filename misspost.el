@@ -6,7 +6,7 @@
 ;; Maintainer: Patryk Gronkiewicz <patryk@gronkiewicz.dev>
 ;; Created: 2023-01-06
 ;; Modified: 2023-01-06
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Keywords: tools multimedia
 ;; Homepage: https://codeberg.org/pgronkievitz/misspost
 ;; Package-Requires: ((emacs "24.3"))
@@ -34,6 +34,9 @@
   "Misskey instance to use."
   (concat "https://" misspost-instance "/"))
 
+(defvar misspost-use-authinfo
+  nil
+  "Whether to use authinfo.")
 
 (defvar misspost-api-key
   nil
@@ -49,16 +52,30 @@ DATA returned data"
 ERROR-THROWN is HTTP error"
   (message "What a terrible failure! %S" error-thrown))
 
+(defun misspost--get-api-key-from-authinfo ()
+  "Get API key from authinfo."
+  (require 'auth-source)
+  (funcall (plist-get (car (auth-source-search :host misspost-instance)) :secret)))
+
+(defun misspost--generate-payload (content)
+  "Generate payload for the misspost.
+CONTENT is the text of the post"
+  (let* ((misspost--key
+          (if misspost-use-authinfo
+              (misspost--get-api-key-from-authinfo)
+              misspost-api-key)))
+  (json-encode `(("visibility" . "public")
+                 ("cw" . nil)
+                 ("i" . ,misspost--key)
+                 ("text" . ,content)))))
+
 (defun misspost--post (content)
   "Post to the fedi.
 CONTENT is the text of the post."
   (request
     (concat (misspost--instance-url) "api/notes/create")
     :type "POST"
-    :data (json-encode `(("visibility" . "public")
-                         ("cw" . nil)
-                         ("i" . ,misspost-api-key)
-                         ("text" . ,content)))
+    :data (misspost--generate-payload content)
     :parser 'json-read
     :success 'misspost--success
     :error 'misspost--fail))
