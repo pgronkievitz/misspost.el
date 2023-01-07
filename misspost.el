@@ -6,7 +6,7 @@
 ;; Maintainer: Patryk Gronkiewicz <patryk@gronkiewicz.dev>
 ;; Created: 2023-01-06
 ;; Modified: 2023-01-06
-;; Version: 0.0.1
+;; Version: 1.0.0
 ;; Keywords: tools multimedia
 ;; Homepage: https://codeberg.org/pgronkievitz/misspost
 ;; Package-Requires: ((emacs "24.3"))
@@ -27,10 +27,13 @@
   :group 'convenience
   :prefix "misspost-")
 
-
 (defvar misspost-instance
-  "https://misskey.io/"
-  "Misskey instance to use.")
+  "misskey.io")
+
+(defun misspost--instance-url ()
+  "Misskey instance to use."
+  (concat "https://" misspost-instance "/"))
+
 
 (defvar misspost-api-key
   nil
@@ -50,7 +53,7 @@ ERROR-THROWN is HTTP error"
   "Post to the fedi.
 CONTENT is the text of the post."
   (request
-    (concat misspost-instance "api/notes/create")
+    (concat (misspost--instance-url) "api/notes/create")
     :type "POST"
     :data (json-encode `(("visibility" . "public")
                          ("cw" . nil)
